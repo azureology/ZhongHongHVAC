@@ -119,5 +119,13 @@ def parse_data(data_frame):
 
 
 def get_ac_data(data: bytes) -> AcData:
+    # validate bl header
+    if len(data) < 6 or data[0] != 0xaa or data[1] != 0x55:
+        raise ValueError("Invalid header")
+    length = int.from_bytes(data[2:4], byteorder='big')
+    if len(data) != 4 + length:
+        raise ValueError("Length mismatch")
+    # trim bl header
+    data = data[4:]
     for data_frame in get_data_frame(data):
         yield parse_data(data_frame)

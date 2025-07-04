@@ -50,6 +50,7 @@ class StatusOperation(enum.Enum):
 
 
 class StatusFanMode(enum.Enum):
+    AUTO = 0x00
     HIGH = 0x01
     MID = 0x02
     LOW = 0x04
@@ -299,11 +300,13 @@ class AcData(collections.abc.Iterable):
         return struct.pack("B", self.checksum)
 
     def encode(self):
-        return b"".join(
+        payload = b"".join(
             [self.header.encode()]
             + [x.encode() for x in self.payload]
             + [self.bin_checksum]
         )
+        # attach broadlink custom header
+        return b"".join([bytes.fromhex("55 aa"),len(payload).to_bytes(2, byteorder='big'),payload])
 
     def hex(self):
         return bytes_debug_str(self.encode())
