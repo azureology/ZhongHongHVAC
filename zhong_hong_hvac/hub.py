@@ -90,7 +90,7 @@ class ZhongHongGateway:
 
             except OSError as e:
                 if e.errno == 32:  # Broken pipe
-                    logger.error("OSError 32 raise, Broken pipe", exc_info=e)
+                    logger.error("OSError 32 raise, Broken pipe >> %s", ac_data.hex(), exc_info=e)
                 if retry_count < self.max_retry:
                     retry_count += 1
                     self.open_socket()
