@@ -105,15 +105,22 @@ class ZhongHongGateway:
                 self.sock.settimeout(None)
 
             except socket.timeout:
-                logger.error("Connot connect to gateway %s:%s", self.ip_addr, self.port)
+                logger.error("Cannot connect to gateway %s:%s", self.ip_addr, self.port)
                 return
 
             except OSError as e:
                 if e.errno == 32:  # Broken pipe
-                    logger.error("OSError 32 raise, Broken pipe >> %s", ac_data.hex(), exc_info=e)
+                    if retry_count < self.max_retry:
+                        logger.debug("Broken pipe, attempting reconnect (attempt %d/%d)", retry_count + 1, self.max_retry)
+                    else:
+                        logger.error("Broken pipe, all retries exhausted >> %s", ac_data.hex())
+                else:
+                    logger.error("OSError %d raise >> %s", e.errno, ac_data.hex())
+                
                 if retry_count < self.max_retry:
                     retry_count += 1
                     self.open_socket()
+                    time.sleep(1)
                     _send(retry_count)
 
         _send(0)
