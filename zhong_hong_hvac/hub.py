@@ -31,6 +31,24 @@ class ZhongHongGateway:
         self._threads = []
         self.max_retry = 5
 
+    def _discover_gw(self) -> str:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        broadcast_addr = ('192.168.1.255', 43708)
+        data = bytes.fromhex("015040ffffff8e")
+        sock.sendto(data, broadcast_addr)
+        sock.settimeout(10)
+        try:
+            while True:
+                data, addr = sock.recvfrom(1024)
+                logger.debug(f"receive response from {addr}: {data.hex()}")
+                return addr[0]
+        except socket.timeout:
+            logger.error("No response from gateway, please check if it is online or configured correctly.")
+            return self.ip_addr
+        finally:
+            sock.close()
+
     def __get_socket(self) -> socket.socket:
         logger.debug("Opening socket to (%s, %s)", self.ip_addr, self.port)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -51,6 +69,8 @@ class ZhongHongGateway:
             self.sock = None
             time.sleep(1)
 
+        self.ip_addr = self._discover_gw()
+        logger.info(f"Discovered gateway IP address: {self.ip_addr}")
         self.sock = self.__get_socket()
         return self.sock
 
